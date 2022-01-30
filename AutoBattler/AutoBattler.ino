@@ -44,7 +44,7 @@ void loop() {
       GameLoop();
       break;
     case GAMEEND://add end state
-      EndLoop;
+      EndLoop();
       break;
   }
   SetPlayerColor();
@@ -52,30 +52,15 @@ void loop() {
 
 
 void EndLoop() {
-  if (buttonDoubleClicked() && matchCount>0){
-    timer.set(1000);
-    setValueOnAllFaces(63);
-    matchCount = 0;
-  }
-  
-  FOREACH_FACE(f) {
-    if(!isValueReceivedOnFaceExpired(f)){
-      if(getLastValueReceivedOnFace(f)==63 && matchCount>0){
-        timer.set(1000);
-      setValueOnAllFaces(63);
-      matchCount = 0;
-      }
-    }
-  }
-  if(timer.isExpired() && matchCount==0){
-    
+  if (gameTimer.isExpired()) {
     state = SETUP;
     setColor(GREEN);
     matchCount = 0;
     player = NONE;
     piece = TANK;
-     
+    
   }
+  
 }
 //Map Coordinates SetUp-----------------------------------------------------------------------------------
 void SetUpLoop() {
@@ -173,6 +158,7 @@ void GameLoop() {
   if (gameTimer.isExpired()){
       matchCount = 1;
       state = GAMEEND;
+      gameTimer.set(5000);
   }
   if(timer.isExpired()) { //1s for each move
     PawnAutoDecide();
