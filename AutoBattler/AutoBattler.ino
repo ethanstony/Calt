@@ -1,14 +1,21 @@
-enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO, ATTACK,
-SEARCH, RESPOND}
+enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO,
+             SEARCH, RESPOND, ATTACK};
+
+enum LOCATE {IDLE, PING, TRACK, RECIEVED};
+byte radar = IDLE;
 
 //player party --------------
-enum PARTY {NONE, Red, Blue}
+enum PARTY {NONE, Red, Blue};
 byte player = NONE;
 
+<<<<<<< HEAD
 enum STATE {SETUP, INPROGRESS, GAMESTART ,GAMEEND}
+=======
+enum STATE {SETUP, INPROGRESS, GAMESTART};
+>>>>>>> 0b4ef04a266007b8ae0d1c9eb7e28d0ca2aebcf5
 byte state = SETUP;
 
-enum pieces {TANK, FIGHTER, RANGER, HEALER}
+enum pieces {TANK, FIGHTER, RANGER, HEALER};
 byte piece = TANK;
 byte hp;
 //position of this blink on the board
@@ -102,13 +109,14 @@ void SetUpLoop() {
 }
 
 void SetUpPlayerParty() {
-  if(buttonMultiClicked()) {
+//  if(buttonLongPressed()) {
+  if(buttonSingleClicked()) {
     player = (player+1) % 3;
   }
  
-  if(buttonSingleClicked()) {
-    piece = (piece+1) % 4;
-  }
+//  if(buttonSingleClicked()) {
+  //  piece = (piece+1) % 4;
+  //}
 }
 //This is only called on the origin! Then messages will be broadcasted to the board. Waits 1s and switch to game state
 void SetUpMap() {
@@ -150,6 +158,7 @@ void SendCoord() {
 
 //Preparation Time Before Pawns Move(Allow some time for setting up coordinates)------------
 void PrepareLoop() {
+  setColor(GREEN);
   if(timer.isExpired()) {
     state = GAMESTART;
     timer.set(1000);
@@ -158,7 +167,7 @@ void PrepareLoop() {
 }
 
 //Game Start. Pawns move----------------------------------------------------------
-enum PawnState {DECIDE, MOVE, RESET}
+enum PawnState {DECIDE, MOVE, RESET};
 byte pawnState = DECIDE;
 //destination this pawn is moving towards
 byte des[] = {10, 10, 10};
@@ -184,7 +193,6 @@ void GameLoop() {
   if(buttonSingleClicked()) {
     SendSearchSignal();
     rface = 6;
-    timer.set(0);
   }
  
   FOREACH_FACE(f) {
@@ -211,48 +219,53 @@ void GameLoop() {
    
     if(isDatagramReadyOnFace(f)) {
       const byte* data = getDatagramOnFace(f);
+      switch(data[0]){
       //Handles coordinate from the neighbor
-      if(data[0] == RESPONSECOORD) {
+        case RESPONSECOORD:
         byte dis = Distance(data[1], data[2], data[3]);
         if(shortest > dis) {
           shortest = dis;
           bestMove = f;
         }
-      }
-      
-      if(data[0] == MOVEINFO) {
+          break;
+        case MOVEINFO:
         ResetTile(data[1],data[2]);
-      }
-     
-      if(data[0] == ATTACK) {
+       case ATTACK:
         if(data[1] != RANGER) {
-          DealDamage(data[3]);
+          DealDamage();
         } else { //ranger's attack
-          DealDamage(data[3]);
+          DealDamage();
          
           byte panetration[4] = {ATTACK, TANK, data[2], data[3]};
           sendDatagramOnFace(panetration, 4, data[2]);
         }
-      }
-      z
-      if(data[0] == SEARCH && data [4] != 0){
-        if(player == NONE)
-          setColor(ORANGE);
+        break;
+        case SEARCH:
+        if(data [4] != 0){
         transmitSearchSignal(data);
-        if(timer.isExpired){
-         timer.set(1000);
         rface = f;
-        }
-      }else if(data[0] == RESPOND && rface == 6){
-          setColor(GREEN);
-      }else if(data[0] == RESPOND){
-        if(player == NONE)
-        setColor(CYAN);
-        transmitRespondSignal(data);
+        setColorOnFace(GREEN, rface);
+          if(player != NONE){
+            sendRespondSignal();
+            }
+        radar = PING;
       }
+<<<<<<< HEAD
       if(player != NONE){
         sendRespondSignal()
+=======
+        break;
+        case RESPOND:
+        if(rface == 6){
+          radar = RECIEVED;
+        }else{
+          radar = TRACK;
+          transmitRespondSignal(data);
+        }
+        break;
+>>>>>>> 0b4ef04a266007b8ae0d1c9eb7e28d0ca2aebcf5
       }
+      
       markDatagramReadOnFace(f);
     }
   }
@@ -268,7 +281,7 @@ void SendSearchSignal() {
   byte data[5] = {SEARCH, x, y, z, r};
  
   FOREACH_FACE(f) {
-    if (f !=rface)
+//    if (f !=rface)
     sendDatagramOnFace(data, 5, f);
   }
 }
@@ -277,7 +290,7 @@ void transmitSearchSignal(byte *package){
   package[4]--;
   
   FOREACH_FACE(f) {
-    if (f !=rface)
+//    if (f !=rface)
     sendDatagramOnFace(package, 5, f);
   }
 }
@@ -285,7 +298,7 @@ void transmitSearchSignal(byte *package){
 
 void sendRespondSignal() {
   byte data[5] = {RESPOND, x, y, z, player};
- 
+  
   sendDatagramOnFace(data, 5, rface);
 }
 
@@ -297,7 +310,7 @@ void transmitRespondSignal(byte *package) {
 void PawnAutoDecide() {
   if(player == NONE) return;
  
-  if(buttonSingleClicked()) //To be changed to check if enemy nearby
+  if(buttonDoubleClicked()) //To be changed to check if enemy nearby
     PawnAttack(x, y-1, z+1);
  
   if(pawnState == DECIDE) {
@@ -314,7 +327,7 @@ void PawnAutoDecide() {
 }
 //Pawn attacks position x,y,z
 //NOTE: Damage can be modified here!
-void PawnAttack(dx, dy, dz) {
+void PawnAttack(byte dx, byte dy, byte dz) {
   byte f = GetAttackFace(dx,dy,dz);
   if(f == 6) return; //invalid attack
   byte data[4] = {ATTACK, piece, f, 0};
@@ -340,7 +353,7 @@ void PawnAttack(dx, dy, dz) {
   }
 }
 
-void SendPropogateDmg(byte data[], f) {
+void SendPropogateDmg(byte data[], byte f) {
   if(f == 0) {
     sendDatagramOnFace(data, 4, 1);
     sendDatagramOnFace(data, 4, 5);
@@ -426,6 +439,7 @@ void SetPlayerColor() {
     }
   }
  
+<<<<<<< HEAD
   if(player == NONE){
     if(state == GAMEEND){
       setColor(WHITE);
@@ -435,9 +449,26 @@ void SetPlayerColor() {
     
   }
     
+=======
+  if(player == NONE)
+    switch(radar){
+      case IDLE:
+        setColor(WHITE);
+        break;
+      case PING:
+        setColor(ORANGE);
+        break;
+      case TRACK:
+        setColor(CYAN);
+        break;
+      case RECIEVED:
+        setColor(GREEN);
+        break;
+    }
+>>>>>>> 0b4ef04a266007b8ae0d1c9eb7e28d0ca2aebcf5
 }
 
-byte GetAttackFace(dx, dy, dz) {
+byte GetAttackFace(byte dx, byte dy, byte dz) {
   if(dx > x && dz < z) {
     return 0;
   } else if(dy > y && dz < z) {
