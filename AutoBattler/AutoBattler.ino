@@ -1,4 +1,4 @@
-enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVERED, MOVEBLUE}
+enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO, ATTACK}
 
 //player party --------------
 enum PARTY {NONE, Red, Blue}
@@ -6,12 +6,18 @@ byte player = NONE;
 
 enum STATE {SETUP, INPROGRESS, GAMESTART}
 byte state = SETUP;
+
+enum pieces {TANK, FIGHTER, RANGER, HEALER}
+byte piece = TANK;
+byte hp;
 //position of this blink on the board
 byte x;
 byte y;
 byte z;
 
 Timer timer;
+Timer effectTimer; //effect duration after hit
+
 //Main Code Body-----------------------------------------------------------------------------------
 void setup() {
   setColor(WHITE);
@@ -35,6 +41,7 @@ void loop() {
       GameLoop();
       break;
   }
+  SetPlayerColor();
 }
 
 //Map Coordinates SetUp-----------------------------------------------------------------------------------
@@ -46,7 +53,6 @@ void SetUpLoop() {
       switch(data[0]) {
         case SETCOORD:
           if(state != INPROGRESS) {
-      setColor(GREEN);
             state = INPROGRESS;
   timer.set(1000);
             x = data[1];
@@ -62,15 +68,17 @@ void SetUpLoop() {
 }
 
 void SetUpPlayerParty() {
-  if(buttonSingleClicked()) {
+  if(buttonMultiClicked()) {
     player = (player+1) % 3;
-    SetPlayerColor();
+  }
+ 
+  if(buttonSingleClicked()) {
+    piece = (piece+1) % 4;
   }
 }
 //This is only called on the origin! Then messages will be broadcasted to the board. Waits 1s and switch to game state
 void SetUpMap() {
   x = 10, y = 10, z = 10;
-  setColor(GREEN);
   SendCoord();
   state = INPROGRESS;
   timer.set(1000);
@@ -111,7 +119,6 @@ void PrepareLoop() {
   if(timer.isExpired()) {
     state = GAMESTART;
     timer.set(1000);
-    SetPlayerColor();
   }
 }
 
@@ -134,7 +141,6 @@ void GameLoop() {
   FOREACH_FACE(f) {
     if (!isValueReceivedOnFaceExpired(f)) {
       if(didValueOnFaceChange(f)) {
-
         switch(getLastValueReceivedOnFace(f)) {
           case REQUESTCOORD:
             if(player == NONE) //Only respond if this tile is empty
@@ -150,12 +156,6 @@ void GameLoop() {
             if(player != NONE)
               SendMove(f);
             break;
-          case MOVERED:
-            ResetTile(Red);
-            break;
-          case MOVEBLUE:
-            ResetTile(Blue);
-            break;
         }
       }
     }
@@ -170,13 +170,33 @@ void GameLoop() {
           bestMove = f;
         }
       }
+     
+      if(data[0] == MOVEINFO) {
+        ResetTile(data[1],data[2]);
+      }
+     
+      if(data[0] == ATTACK) {
+        if(data[1] != RANGER) {
+          DealDamage(data[3]);
+        } else { //ranger's attack
+          DealDamage(data[3]);
+         
+          byte panetration[4] = {ATTACK, TANK, data[2], data[3]};
+          sendDatagramOnFace(panetration, 4, data[2]);
+        }
+      }
+     
       markDatagramReadOnFace(f);
     }
   }
+ 
 }
 //Each pawn move is split into decision of which path to take and communicate with the neighbor to move.
 void PawnAutoDecide() {
   if(player == NONE) return;
+ 
+  if(buttonSingleClicked()) //To be changed to check if enemy nearby
+    PawnAttack(x, y-1, z+1);
  
   if(pawnState == DECIDE) {
     timer.set(500);
@@ -190,11 +210,57 @@ void PawnAutoDecide() {
     timer.set(500);
   }
 }
+//Pawn attacks position x,y,z
+//NOTE: Damage can be modified here!
+void PawnAttack(dx, dy, dz) {
+  byte f = GetAttackFace(dx,dy,dz);
+  if(f == 6) return; //invalid attack
+  byte data[4] = {ATTACK, piece, f, 0};
+  switch(piece) {
+    case TANK:
+      data[3] = 1; //assign damage
+      sendDatagramOnFace(data, 4, f);
+      break;
+    case FIGHTER:
+      data[3] = 1; //assign damage
+      sendDatagramOnFace(data, 4, f);
+      //propogate damage to the two near neighbors
+      SendPropogateDmg(data, f);
+      break;
+    case RANGER:
+      data[3] = 1; //assign damage
+      sendDatagramOnFace(data, 4, f);
+      break;
+    case HEALER:
+      data[3] = 1; //assign damage
+      sendDatagramOnFace(data, 4, f);
+      break;
+  }
+}
 
-void SetDestiny(x, y, z) {
-  des[0] = x;
-  des[1] = y;
-  des[2] = z;
+void SendPropogateDmg(byte data[], f) {
+  if(f == 0) {
+    sendDatagramOnFace(data, 4, 1);
+    sendDatagramOnFace(data, 4, 5);
+  } else if(f == 5) {
+    sendDatagramOnFace(data, 4, 0);
+    sendDatagramOnFace(data, 4, 4);
+  } else {
+    sendDatagramOnFace(data, 4, f+1);
+    sendDatagramOnFace(data, 4, f-1);
+  }
+}
+
+//deal damage to this pawn
+void DealDamage() {
+  effectTimer.set(200);
+  if(player == NONE) return;
+}
+
+void SetDestiny(byte dx, byte dy, byte dz) {
+  des[0] = dx;
+  des[1] = dy;
+  des[2] = dz;
 }
 //request for the coord of all neighbors
 void NavRequest() {
@@ -216,13 +282,9 @@ void SendMoveResponse(byte face) {
 }
 //send in info about this pawn.
 void SendMove(byte face) {
-  if(player == Red)
-    setValueSentOnFace(MOVERED, face);
- 
-  if(player == Blue)
-    setValueSentOnFace(MOVEBLUE, face);
- 
-  ResetTile(NONE);
+  byte data[3] = {MOVEINFO, player, piece};
+  sendDatagramOnFace(data, 3, face);
+  ResetTile(NONE, TANK);
 }
 
 //Helper-----------------------------------------------------------------------------------
@@ -234,40 +296,72 @@ byte DiffBetween(byte a, byte b) {
   }
 }
 
-byte Distance(byte x, byte y, byte z) {
-  return DiffBetween(x,des[0]) + DiffBetween(y,des[1]) + DiffBetween(z,des[2]);
+byte Distance(byte dx, byte dy, byte dz) {
+  return DiffBetween(dx,des[0]) + DiffBetween(dy,des[1]) + DiffBetween(dz,des[2]);
 }
 
 void SetPlayerColor() {
-    if(player == Red)
-      setColor(RED);
+  if(!effectTimer.isExpired()) {
+    setColor(MAGENTA);
+    return;
+  }
  
-    if(player == Blue)
-      setColor(BLUE);
+  if(player == Red) {
+    for(byte i = 0; i <= piece; i++) {
+      setColorOnFace(YELLOW,i);
+    }
+    for(byte i = piece+1; i < 6; i++) {
+      setColorOnFace(RED,i);
+    }
+  }
+ 
+  if(player == Blue) {
+    for(byte i = 0; i <= piece; i++) {
+      setColorOnFace(YELLOW,i);
+    }
+    for(byte i = piece+1; i < 6; i++) {
+      setColorOnFace(BLUE,i);
+    }
+  }
+ 
+  if(player == NONE)
+    setColor(GREEN);
 }
+
+byte GetAttackFace(dx, dy, dz) {
+  if(dx > x && dz < z) {
+    return 0;
+  } else if(dy > y && dz < z) {
+    return 1;
+  } else if(dy > y && dx < x) {
+    return 2;
+  } else if(dz > z && dx < x) {
+    return 3;
+  } else if(dz > z && dy < y) {
+    return 4;
+  } else if(dx > x && dy < y) {
+    return 5;
+  } else {
+    return 6;
+  }
+}
+
 //reset by party
-void ResetTile(byte party) {
+void ResetTile(byte party, byte piec) {
   switch(party) {
     case NONE:
       player = NONE;
-      setColor(GREEN);
-      bestMove = 6;
-      shortest = 20;
       pawnState = DECIDE;
       break;
     case Red:
       player = Red;
-      setColor(RED);
-      bestMove = 6;
-      shortest = 20;
-      occupied = false;
       break;
     case Blue:
       player = Blue;
-      setColor(BLUE);
-      bestMove = 6;
-      shortest = 20;
-      occupied = false;
       break;
   }
+  bestMove = 6;
+  shortest = 20;
+  piece = piec;
+  occupied = false;
 }
