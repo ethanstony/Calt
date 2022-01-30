@@ -270,7 +270,7 @@ void GameLoop() {
         if(player == NONE)
           setColor(ORANGE);
         transmitSearchSignal(data);
-        if(timer.isExpired){
+        if(timer.isExpired()){
          timer.set(1000);
         rface = f;
         }
