@@ -462,7 +462,7 @@ void SetPlayerColor() {
     if(state == GAMEEND){
       setColor(WHITE);
     }else{
-      setColor(WHITE);
+      setColor(GREEN);
     }
     
   }
