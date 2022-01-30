@@ -194,8 +194,10 @@ byte shortest = 20;
 bool occupied = false;
 //Marks if an enemy is found
 bool searching = true;
+byte rface = 6;
 
 void GameLoop() {
+  
   if (gameTimer.isExpired()){
       matchCount = 1;
       state = GAMEEND;
@@ -207,7 +209,7 @@ void GameLoop() {
   }
  
   if(buttonSingleClicked()) {
-    SendSearchSignal();
+    //SendSearchSignal();
     rface = 6;
     timer.set(0);
   }
@@ -274,12 +276,12 @@ void GameLoop() {
           
         case SEARCH:
           if (data [4] != 0 && knowledge == UNEXPLORED){
-            transmitSearchSignal(data);
+            //transmitSearchSignal(data);
             rface = f;
             knowledge = EXPLORED;
             moreinfo = EXPLORED;
             if(player != NONE){
-              sendRespondSignal();
+              //sendRespondSignal();
               }
             }
           break;
@@ -287,7 +289,7 @@ void GameLoop() {
         case RESPOND:
           if(player == NONE)
             moreinfo = TRAIL;
-          transmitRespondSignal(data);
+          //transmitRespondSignal(data);
           if(rface == 6)
             moreinfo = YOU;
           break;
