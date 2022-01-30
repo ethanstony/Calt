@@ -71,9 +71,68 @@ void loop() {
       GameLoop();
       break;
    }
+
+   paintOn();
 }
 
+void paintOn(){
+  switch(state) {
+    case SETUP0:
+      break;
+     default:
+  if(side == 0){
+            setColor(WHITE);
+          }else{
+            if(side == 1){
+              if(isOrigin == 1){
+                setColor(BLUE);
+              }else{
+                setColor(BackgroundBlue);
+              }        
+            }else{
+              if(isOrigin == 1){
+                setColor(RED);
+              }else{
+                setColor(BackgroundRed);
+              }
+            }
+            switch(piece){
+              case empty:
+                break;
+              case tank:
+                for(int i = 0; i < health; i++){
+                  if(side == 1){
+                    setColorOnFace(BlueTank, i);
+                  }else{
+                    setColorOnFace(RedTank, i);
+                  }        
+                }
+                break;
+              case fighter:
+                for(int i = 0; i < health; i++){
+                  if(side == 1){
+                    setColorOnFace(BlueFighter, i);
+                  }else{
+                    setColorOnFace(RedFighter, i);
+                  } 
+                }
+                break;
+              case ranger:
+                for(int i = 0; i < health; i++){
+                  if(side == 1){
+                    setColorOnFace(BlueRanger, i);
+                  }else{
+                    setColorOnFace(RedRanger, i);
+                  } 
+                }
+                break;
+            }
+          }
+          break;
+  }
+}
 
+//starting code
 void inertLoop() {
   FOREACH_FACE(f) {
     if (!isValueReceivedOnFaceExpired(f)) {//a neighbor!
@@ -131,7 +190,7 @@ void  CALCinertLoop(){
   if(isOrigin == 1){
     if(timerPrimed == false){
       
-      PrepTimer.set(2000);
+      PrepTimer.set(1000);
       timerPrimed = true;
     }else{
       if(PrepTimer.isExpired()){
@@ -264,7 +323,7 @@ void displaySide(){
                 break;
             }
           }   
-          }  
+      }  
       break;
     case GO:
        setColor(GREEN);
@@ -407,7 +466,7 @@ void PrepareLoop() {
   if(timer.isExpired()) {
     state = GAMESTART;
     timer.set(1000);
-    SetPlayerColor();
+    //SetPlayerColor();
   }
 }
 
