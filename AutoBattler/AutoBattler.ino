@@ -30,6 +30,7 @@ void loop() {
   //state control
   switch(state) {
     case SETUP:
+      setValueSentOnAllFaces(0);
       SetUpPlayerParty();
       //Once double clicked, we broadcast set-up-map to the board
       if(buttonDoubleClicked())
@@ -52,7 +53,22 @@ void loop() {
 
 
 void EndLoop() {
-  if (gameTimer.isExpired()) {
+  if(buttonDoubleClicked() && matchCount > 0){
+    gameTimer.set(2000);
+    matchCount = 0;
+    setValueSentOnAllFaces(63);
+  }
+  FOREACH_FACE(f) {
+    if(!isValueReceivedOnFaceExpired(f)){
+      if(getLastValueReceivedOnFace(f) == 63 && matchCount > 0){
+      gameTimer.set(2000);
+      matchCount = 0;
+      setValueSentOnAllFaces(63);
+      }
+    }
+  }
+  
+  if (gameTimer.isExpired() && matchCount == 0) {
     state = SETUP;
     setColor(GREEN);
     matchCount = 0;
@@ -158,7 +174,8 @@ void GameLoop() {
   if (gameTimer.isExpired()){
       matchCount = 1;
       state = GAMEEND;
-      gameTimer.set(5000);
+      
+      //gameTimer.set(5000);
   }
   if(timer.isExpired()) { //1s for each move
     PawnAutoDecide();
