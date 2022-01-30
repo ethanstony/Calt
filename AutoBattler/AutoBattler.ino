@@ -1,4 +1,5 @@
-enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVERED, MOVEBLUE}
+enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVERED, MOVEBLUE,
+SEARCH, RESPOND}
 
 //player party --------------
 enum PARTY {NONE, Red, Blue}
@@ -126,9 +127,17 @@ byte shortest = 20;
 //once a neighboring pawn is allowed to move in,  this tile is locked
 bool occupied = false;
 
+byte rface;
+
 void GameLoop() {
   if(timer.isExpired()) { //1s for each move
     PawnAutoDecide();
+  }
+  
+  if(buttonSingleClicked()) {
+    SendSearchSignal();
+    rface = 6;
+    timer.set(0);
   }
  
   FOREACH_FACE(f) {
@@ -170,10 +179,64 @@ void GameLoop() {
           bestMove = f;
         }
       }
+        if(data[0] == SEARCH && data [4] != 0){
+        if(player == NONE)
+          setColor(ORANGE);
+        transmitSearchSignal(data);
+        if(timer.isExpired){
+         timer.set(1000);
+        rface = f;
+        }
+      }else if(data[0] == RESPOND && rface == 6){
+          setColor(GREEN);
+      }else if(data[0] == RESPOND){
+        if(player == NONE)
+        setColor(CYAN);
+        transmitRespondSignal(data);
+      }
+      if(player != NONE){
+      	sendRespondSignal()
+      }
+
       markDatagramReadOnFace(f);
     }
   }
 }
+
+byte optimalMove(){
+}
+
+byte r = 3;
+
+void SendSearchSignal() {
+  byte data[5] = {SEARCH, x, y, z, r};
+ 
+  FOREACH_FACE(f) {
+    if (f !=rface)
+    sendDatagramOnFace(data, 5, f);
+  }
+}
+
+void transmitSearchSignal(byte *package){
+  package[4]--;
+  
+  FOREACH_FACE(f) {
+    if (f !=rface)
+    sendDatagramOnFace(package, 5, f);
+  }
+}
+
+
+void sendRespondSignal() {
+  byte data[5] = {RESPOND, x, y, z, player};
+ 
+  sendDatagramOnFace(data, 5, rface);
+}
+
+void transmitRespondSignal(byte *package) {
+  sendDatagramOnFace(package, 5, rface);
+}
+
 //Each pawn move is split into decision of which path to take and communicate with the neighbor to move.
 void PawnAutoDecide() {
   if(player == NONE) return;
