@@ -5,7 +5,7 @@ SEARCH, RESPOND}
 enum PARTY {NONE, Red, Blue}
 byte player = NONE;
 
-enum STATE {SETUP, INPROGRESS, GAMESTART}
+enum STATE {SETUP, INPROGRESS, GAMESTART ,GAMEEND}
 byte state = SETUP;
 
 enum pieces {TANK, FIGHTER, RANGER, HEALER}
@@ -18,6 +18,8 @@ byte z;
 
 Timer timer;
 Timer effectTimer; //effect duration after hit
+Timer gameTimer;
+byte matchCount = 0;
 
 //Main Code Body-----------------------------------------------------------------------------------
 void setup() {
@@ -41,10 +43,40 @@ void loop() {
     case GAMESTART:
       GameLoop();
       break;
+    case GAMEEND://add end state
+      EndLoop;
+      break;
   }
   SetPlayerColor();
 }
 
+
+void EndLoop() {
+  if (buttonDoubleClicked() && matchCount>0){
+    timer.set(1000);
+    setValueOnAllFaces(63);
+    matchCount = 0;
+  }
+  
+  FOREACH_FACE(f) {
+    if(!isValueReceivedOnFaceExpired(f)){
+      if(getLastValueReceivedOnFace(f)==63 && matchCount>0){
+        timer.set(1000);
+      setValueOnAllFaces(63);
+      matchCount = 0;
+      }
+    }
+  }
+  if(timer.isExpired() && matchCount==0){
+    
+    state = SETUP;
+    setColor(GREEN);
+    matchCount = 0;
+    player = NONE;
+    piece = TANK;
+     
+  }
+}
 //Map Coordinates SetUp-----------------------------------------------------------------------------------
 void SetUpLoop() {
   FOREACH_FACE(f) {
@@ -120,6 +152,7 @@ void PrepareLoop() {
   if(timer.isExpired()) {
     state = GAMESTART;
     timer.set(1000);
+    gameTimer.set(15000);
   }
 }
 
@@ -137,6 +170,10 @@ bool occupied = false;
 byte rface;
 
 void GameLoop() {
+  if (gameTimer.isExpired()){
+      matchCount = 1;
+      state = GAMEEND;
+  }
   if(timer.isExpired()) { //1s for each move
     PawnAutoDecide();
   }
@@ -211,7 +248,7 @@ void GameLoop() {
         transmitRespondSignal(data);
       }
       if(player != NONE){
-      	sendRespondSignal()
+        sendRespondSignal()
       }
       markDatagramReadOnFace(f);
     }
@@ -386,8 +423,15 @@ void SetPlayerColor() {
     }
   }
  
-  if(player == NONE)
-    setColor(GREEN);
+  if(player == NONE){
+    if(state == GAMEEND){
+      setColor(WHITE);
+    }else{
+      setColor(GREEN);
+    }
+    
+  }
+    
 }
 
 byte GetAttackFace(dx, dy, dz) {
