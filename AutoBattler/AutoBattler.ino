@@ -1,17 +1,17 @@
 enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO,
-             SEARCH, RESPOND, ATTACK}
+             SEARCH, RESPOND, ATTACK};
 
-enum LOCATE {IDLE, PING, TRACK}
+enum LOCATE {IDLE, PING, TRACK, RECIEVED};
 byte radar = IDLE;
 
 //player party --------------
-enum PARTY {NONE, Red, Blue}
+enum PARTY {NONE, Red, Blue};
 byte player = NONE;
 
-enum STATE {SETUP, INPROGRESS, GAMESTART}
+enum STATE {SETUP, INPROGRESS, GAMESTART};
 byte state = SETUP;
 
-enum pieces {TANK, FIGHTER, RANGER, HEALER}
+enum pieces {TANK, FIGHTER, RANGER, HEALER};
 byte piece = TANK;
 byte hp;
 //position of this blink on the board
@@ -129,7 +129,7 @@ void PrepareLoop() {
 }
 
 //Game Start. Pawns move----------------------------------------------------------
-enum PawnState {DECIDE, MOVE, RESET}
+enum PawnState {DECIDE, MOVE, RESET};
 byte pawnState = DECIDE;
 //destination this pawn is moving towards
 byte des[] = {10, 10, 10};
@@ -152,75 +152,78 @@ void GameLoop() {
   }
  
   FOREACH_FACE(f) {
-//    if (!isValueReceivedOnFaceExpired(f)) {
-//      if(didValueOnFaceChange(f)) {
-//        switch(getLastValueReceivedOnFace(f)) {
-//          case REQUESTCOORD:
-//            if(player == NONE) //Only respond if this tile is empty
-//              NavResponse(f);
-//            break;
-//          case REQUESTMOVE:
-//            if(!occupied && player == NONE) {
-//              SendMoveResponse(f);
-//              occupied = true;
-//            }
-//            break;
-//          case RESPONSEMOVE:
-//            if(player != NONE)
-//              SendMove(f);
-//            break;
-//        }
-//      }
-//    }
+    if (!isValueReceivedOnFaceExpired(f)) {
+      if(didValueOnFaceChange(f)) {
+        switch(getLastValueReceivedOnFace(f)) {
+          case REQUESTCOORD:
+            if(player == NONE) //Only respond if this tile is empty
+              NavResponse(f);
+            break;
+          case REQUESTMOVE:
+            if(!occupied && player == NONE) {
+              SendMoveResponse(f);
+              occupied = true;
+            }
+            break;
+          case RESPONSEMOVE:
+            if(player != NONE)
+              SendMove(f);
+            break;
+        }
+      }
+    }
    
     if(isDatagramReadyOnFace(f)) {
       const byte* data = getDatagramOnFace(f);
+      switch(data[0]){
       //Handles coordinate from the neighbor
-      if(data[0] == RESPONSECOORD) {
+        case RESPONSECOORD:
         byte dis = Distance(data[1], data[2], data[3]);
         if(shortest > dis) {
           shortest = dis;
           bestMove = f;
         }
-      }
-      
-      if(data[0] == MOVEINFO) {
+          break;
+        case MOVEINFO:
         ResetTile(data[1],data[2]);
-      }
-     
-      if(data[0] == ATTACK) {
+       case ATTACK:
         if(data[1] != RANGER) {
-          DealDamage(data[3]);
+          DealDamage();
         } else { //ranger's attack
-          DealDamage(data[3]);
+          DealDamage();
          
           byte panetration[4] = {ATTACK, TANK, data[2], data[3]};
           sendDatagramOnFace(panetration, 4, data[2]);
         }
-      }
-      if(data[0] == SEARCH && data [4] != 0){
-        radar = PING;
+        break;
+        case SEARCH:
+        if(data [4] != 0){
         transmitSearchSignal(data);
         rface = f;
         setColorOnFace(GREEN, rface);
           if(player != NONE){
             sendRespondSignal();
             }
-      }else if(data[0] == RESPOND){
+        radar = PING;
+      }
+        break;
+        case RESPOND:
         if(rface == 6){
-          setColor(GREEN);
+          radar = RECIEVED;
         }else{
           radar = TRACK;
           transmitRespondSignal(data);
         }
+        break;
       }
+      
       markDatagramReadOnFace(f);
     }
   }
  
 }
 
-byte optimalMove(){setup
+byte optimalMove(){
 }
 
 byte r = 3;
@@ -275,7 +278,7 @@ void PawnAutoDecide() {
 }
 //Pawn attacks position x,y,z
 //NOTE: Damage can be modified here!
-void PawnAttack(dx, dy, dz) {
+void PawnAttack(byte dx, byte dy, byte dz) {
   byte f = GetAttackFace(dx,dy,dz);
   if(f == 6) return; //invalid attack
   byte data[4] = {ATTACK, piece, f, 0};
@@ -301,7 +304,7 @@ void PawnAttack(dx, dy, dz) {
   }
 }
 
-void SendPropogateDmg(byte data[], f) {
+void SendPropogateDmg(byte data[], byte f) {
   if(f == 0) {
     sendDatagramOnFace(data, 4, 1);
     sendDatagramOnFace(data, 4, 5);
@@ -395,13 +398,16 @@ void SetPlayerColor() {
       case PING:
         setColor(ORANGE);
         break;
-      case Track:
+      case TRACK:
         setColor(CYAN);
+        break;
+      case RECIEVED:
+        setColor(GREEN);
         break;
     }
 }
 
-byte GetAttackFace(dx, dy, dz) {
+byte GetAttackFace(byte dx, byte dy, byte dz) {
   if(dx > x && dz < z) {
     return 0;
   } else if(dy > y && dz < z) {
