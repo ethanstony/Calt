@@ -1,8 +1,14 @@
+<<<<<<< HEAD
 enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO,
              SEARCH, RESPOND, ATTACK};
 
 enum LOCATE {IDLE, PING, TRACK, RECIEVED};
 byte radar = IDLE;
+=======
+#define GREY makeColorRGB(105,105,105)
+ 
+enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO, ATTACK, SEARCH, RESPOND, SEARCHENEMY, SEARCHRES}
+>>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
 
 //player party --------------
 enum PARTY {NONE, Red, Blue};
@@ -17,7 +23,7 @@ byte state = SETUP;
 
 enum pieces {TANK, FIGHTER, RANGER, HEALER};
 byte piece = TANK;
-byte hp;
+byte hp = 1;
 //position of this blink on the board
 byte x;
 byte y;
@@ -95,7 +101,7 @@ void SetUpLoop() {
         case SETCOORD:
           if(state != INPROGRESS) {
             state = INPROGRESS;
-  timer.set(1000);
+            timer.set(1000);
             x = data[1];
             y = data[2];
             z = data[3];
@@ -109,14 +115,26 @@ void SetUpLoop() {
 }
 
 void SetUpPlayerParty() {
+<<<<<<< HEAD
 //  if(buttonLongPressed()) {
   if(buttonSingleClicked()) {
+=======
+  if(buttonLongPressed()) {
+>>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
     player = (player+1) % 3;
+    SetUpHP();
   }
  
+<<<<<<< HEAD
 //  if(buttonSingleClicked()) {
   //  piece = (piece+1) % 4;
   //}
+=======
+  if(buttonSingleClicked() && player != NONE) {
+    piece = (piece+1) % 4;
+    SetUpHP();
+  }
+>>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
 }
 //This is only called on the origin! Then messages will be broadcasted to the board. Waits 1s and switch to game state
 void SetUpMap() {
@@ -155,6 +173,24 @@ void SendCoord() {
   data[3] = z;
   sendDatagramOnFace(data, 4, 5);
 }
+//*************************************************************** Edit Hp here
+void SetUpHP() {
+  if(player == NONE) return;
+  switch(piece) {
+    case TANK:
+      hp = 5;
+      break;
+    case FIGHTER:
+      hp = 3;
+      break;
+    case RANGER:
+      hp = 3;
+      break;
+    case HEALER:
+      hp = 2;
+      break;
+  }
+}
 
 //Preparation Time Before Pawns Move(Allow some time for setting up coordinates)------------
 void PrepareLoop() {
@@ -167,8 +203,13 @@ void PrepareLoop() {
 }
 
 //Game Start. Pawns move----------------------------------------------------------
+<<<<<<< HEAD
 enum PawnState {DECIDE, MOVE, RESET};
 byte pawnState = DECIDE;
+=======
+enum PawnState {SEARCHING, DECIDE, MOVE, RESET}
+byte pawnState = SEARCHING;
+>>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
 //destination this pawn is moving towards
 byte des[] = {10, 10, 10};
 //bestMove indicates the next neighbor to move to;
@@ -176,8 +217,8 @@ byte bestMove = 6;
 byte shortest = 20;
 //once a neighboring pawn is allowed to move in,  this tile is locked
 bool occupied = false;
-
-byte rface;
+//Marks if an enemy is found
+bool searching = true;
 
 void GameLoop() {
   if (gameTimer.isExpired()){
@@ -189,11 +230,20 @@ void GameLoop() {
   if(timer.isExpired()) { //1s for each move
     PawnAutoDecide();
   }
+<<<<<<< HEAD
   
   if(buttonSingleClicked()) {
     SendSearchSignal();
     rface = 6;
   }
+=======
+ 
+  //if(buttonSingleClicked()) {
+    //SendSearchSignal();
+    //rface = 6;
+    //timer.set(0);
+  //}
+>>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
  
   FOREACH_FACE(f) {
     if (!isValueReceivedOnFaceExpired(f)) {
@@ -213,6 +263,10 @@ void GameLoop() {
             if(player != NONE)
               SendMove(f);
             break;
+          case SEARCHRES:
+            pawnState = SEARCHING;
+            PawnAttack(f);
+            break;
         }
       }
     }
@@ -223,17 +277,36 @@ void GameLoop() {
       //Handles coordinate from the neighbor
         case RESPONSECOORD:
         byte dis = Distance(data[1], data[2], data[3]);
-        if(shortest > dis) {
+        byte self = Distance(x, y, z);
+        if(self > dis && shortest > dis) {
           shortest = dis;
           bestMove = f;
         }
+<<<<<<< HEAD
           break;
         case MOVEINFO:
         ResetTile(data[1],data[2]);
        case ATTACK:
+=======
+      }
+     
+      if(data[0] == MOVEINFO) {
+        ResetTile(data[1],data[2],data[3]);
+      }
+     
+      if(data[0] == SEARCHENEMY) {
+        if(player != NONE && player != data[1]) {
+          setColor(ORANGE);
+          setValueSentOnFace(SEARCHRES,f);
+        }
+      }
+     
+      if(data[0] == ATTACK) {
+>>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
         if(data[1] != RANGER) {
           DealDamage();
         } else { //ranger's attack
+<<<<<<< HEAD
           DealDamage();
          
           byte panetration[4] = {ATTACK, TANK, data[2], data[3]};
@@ -243,6 +316,19 @@ void GameLoop() {
         case SEARCH:
         if(data [4] != 0){
         transmitSearchSignal(data);
+=======
+          DealDamage(data[3]);
+          byte panetration[4] = {ATTACK, TANK, data[2], data[3]};
+          sendDatagramOnFace(panetration, 4, data[2]);
+        }
+      }
+      if(data[0] == SEARCH && data [4] != 0){
+        if(player == NONE)
+          setColor(ORANGE);
+        transmitSearchSignal(data);
+        if(timer.isExpired()){
+         timer.set(1000);
+>>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
         rface = f;
         setColorOnFace(GREEN, rface);
           if(player != NONE){
@@ -272,6 +358,7 @@ void GameLoop() {
  
 }
 
+<<<<<<< HEAD
 byte optimalMove(){
 }
 
@@ -306,13 +393,29 @@ void transmitRespondSignal(byte *package) {
   sendDatagramOnFace(package, 5, rface);
 }
 
+=======
+>>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
 //Each pawn move is split into decision of which path to take and communicate with the neighbor to move.
 void PawnAutoDecide() {
   if(player == NONE) return;
  
+<<<<<<< HEAD
   if(buttonDoubleClicked()) //To be changed to check if enemy nearby
     PawnAttack(x, y-1, z+1);
+=======
+  if(pawnState == SEARCHING) {
+    timer.set(500);
+    pawnState = DECIDE;
+    SearchForEnemy();
+    return;
+  }
+>>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
  
+  if(x == des[0] && y == des[1] && z == des[2]) {
+    pawnState = SEARCHING;
+    return;
+  }
+  
   if(pawnState == DECIDE) {
     timer.set(500);
     pawnState = MOVE;
@@ -321,15 +424,28 @@ void PawnAutoDecide() {
   }
  
   if(pawnState == MOVE) {
-    SendMoveRequest();
+    pawnState = SEARCHING;
     timer.set(500);
+    SendMoveRequest();
+  }
+}
+
+void SearchForEnemy() {
+  byte data[2] = {SEARCHENEMY, player};
+  FOREACH_FACE(f) {
+    sendDatagramOnFace(data, 2, f);
   }
 }
 //Pawn attacks position x,y,z
+<<<<<<< HEAD
 //NOTE: Damage can be modified here!
 void PawnAttack(byte dx, byte dy, byte dz) {
   byte f = GetAttackFace(dx,dy,dz);
   if(f == 6) return; //invalid attack
+=======
+//********************************************************NOTE: edit damage here!
+void PawnAttack(byte f) {
+>>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
   byte data[4] = {ATTACK, piece, f, 0};
   switch(piece) {
     case TANK:
@@ -367,9 +483,14 @@ void SendPropogateDmg(byte data[], byte f) {
 }
 
 //deal damage to this pawn
-void DealDamage() {
-  effectTimer.set(200);
+void DealDamage(byte dmg) {
   if(player == NONE) return;
+  effectTimer.set(500);
+  if(hp <= dmg) {
+    ResetTile(NONE,TANK,6);
+  }
+  else
+    hp -= dmg;
 }
 
 void SetDestiny(byte dx, byte dy, byte dz) {
@@ -388,7 +509,9 @@ void NavResponse(byte face) {
 }
 //request to move to the optimal neighbor
 void SendMoveRequest() {
-  if(bestMove == 6) return;
+  if(bestMove == 6) {
+    return;
+  }
   setValueSentOnFace(REQUESTMOVE, bestMove);
 }
 //respond only if move is possible
@@ -397,9 +520,9 @@ void SendMoveResponse(byte face) {
 }
 //send in info about this pawn.
 void SendMove(byte face) {
-  byte data[3] = {MOVEINFO, player, piece};
-  sendDatagramOnFace(data, 3, face);
-  ResetTile(NONE, TANK);
+  byte data[4] = {MOVEINFO, player, piece, hp};
+  sendDatagramOnFace(data, 4, face);
+  ResetTile(NONE, TANK, 6);
 }
 
 //Helper-----------------------------------------------------------------------------------
@@ -414,7 +537,7 @@ byte DiffBetween(byte a, byte b) {
 byte Distance(byte dx, byte dy, byte dz) {
   return DiffBetween(dx,des[0]) + DiffBetween(dy,des[1]) + DiffBetween(dz,des[2]);
 }
-
+//****************************************************************** Edit pawn color here
 void SetPlayerColor() {
   if(!effectTimer.isExpired()) {
     setColor(MAGENTA);
@@ -422,21 +545,13 @@ void SetPlayerColor() {
   }
  
   if(player == Red) {
-    for(byte i = 0; i <= piece; i++) {
-      setColorOnFace(YELLOW,i);
-    }
-    for(byte i = piece+1; i < 6; i++) {
-      setColorOnFace(RED,i);
-    }
+    setColor(RED);
+    SetPieceStyle();
   }
  
   if(player == Blue) {
-    for(byte i = 0; i <= piece; i++) {
-      setColorOnFace(YELLOW,i);
-    }
-    for(byte i = piece+1; i < 6; i++) {
-      setColorOnFace(BLUE,i);
-    }
+    setColor(BLUE);
+    SetPieceStyle();
   }
  
 <<<<<<< HEAD
@@ -467,8 +582,38 @@ void SetPlayerColor() {
     }
 >>>>>>> 0b4ef04a266007b8ae0d1c9eb7e28d0ca2aebcf5
 }
+//****************************************************************** Edit pawn style here
+void SetPieceStyle() {
+  switch(piece) {
+    case TANK:
+      setColorOnFace(GREY,0);
+      setColorOnFace(GREY,1);
+      setColorOnFace(GREY,2);
+      setColorOnFace(GREY,5);
+      break;
+    case FIGHTER:
+      setColorOnFace(YELLOW,0);
+      setColorOnFace(YELLOW,1);
+      setColorOnFace(YELLOW,2);
+      break;
+    case RANGER:
+      setColorOnFace(ORANGE,2);
+      setColorOnFace(ORANGE,5);
+      break;
+    case HEALER:
+      setColorOnFace(GREEN,0);
+      break;
+     
+  }
+}
 
 byte GetAttackFace(byte dx, byte dy, byte dz) {
+
+
+<<<<<<< HEAD
+byte GetAttackFace(byte dx, byte dy, byte dz) {
+=======
+>>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
   if(dx > x && dz < z) {
     return 0;
   } else if(dy > y && dz < z) {
@@ -487,7 +632,7 @@ byte GetAttackFace(byte dx, byte dy, byte dz) {
 }
 
 //reset by party
-void ResetTile(byte party, byte piec) {
+void ResetTile(byte party, byte piec, byte health) {
   switch(party) {
     case NONE:
       player = NONE;
@@ -500,6 +645,7 @@ void ResetTile(byte party, byte piec) {
       player = Blue;
       break;
   }
+  hp = health;
   bestMove = 6;
   shortest = 20;
   piece = piec;
