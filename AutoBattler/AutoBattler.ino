@@ -173,9 +173,11 @@ void SetUpHP() {
 }
 
 //Preparation Time Before Pawns Move(Allow some time for setting up coordinates)------------
+//Variable to hold a color that is sent out to declare the start of a round
+Color startWave = 0;
 void PrepareLoop() {
   if(timer.isExpired()) {
-    setColor(GREEN);
+    startWave = GREEN;
     state = GAMESTART;
     timer.set(1000);
     gameTimer.set(15000);
@@ -435,6 +437,12 @@ void SetPlayerColor() {
     setColor(MAGENTA);
     return;
   }
+  
+  if(startWave !=0){
+    setColor(startWave);
+    startWave = 0;
+    return;
+  }
  
   if(player == Red) {
     setColor(RED);
@@ -450,7 +458,7 @@ void SetPlayerColor() {
     if(state == GAMEEND){
       setColor(WHITE);
     }else{
-      setColor(GREEN);
+      setColor(WHITE);
     }
     
   }
