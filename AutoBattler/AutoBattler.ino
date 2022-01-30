@@ -57,7 +57,7 @@ void loop() {
       break;
     case SETUP:
       //while(true)
-      //SetUpPlayerParty(); //change 
+      SetUpPlayerParty(); //change 
       //Once double clicked, we broadcast set-up-map to the board
       if(isOrigin == 1 && side == 1){
         SetUpMap();
@@ -128,10 +128,26 @@ void paintOn(){
                 break;
             }
           }
+
+          if(player == Blue){
+            setColor(BLUE);
+          }else if(player == Red){
+            setColor(RED);
+          }
           break;
   }
 }
 
+void SetUpPlayerParty() {
+  if(piece!=empty) {
+    if(side == 1){
+      player == Blue;
+    }else if(side == 2){
+      player == Red;
+    }
+   
+  }
+}
 //starting code
 void inertLoop() {
   FOREACH_FACE(f) {
@@ -155,13 +171,12 @@ void inertLoop() {
     }
   }
   if(buttonSingleClicked()){
-          if(side == 0){
-            side = 1;
-          }else{
+          
             switch (piece){
               case empty:
                 piece = tank;
                 health = 6;
+                side = 1;
                 break;
               case tank:
                 piece = fighter;
@@ -172,18 +187,19 @@ void inertLoop() {
                 health = 2;
                 break;
               case ranger:
-                piece = empty;
-                health = 0;
-                if(isOrigin!=1){
-                  if(side == 1){
-                    side++;
-                  }else{
-                    side--;
-                  }
+                if(side == 1){
+                  piece = tank;
+                  health = 6;
+                  side = 2;
+                }else{
+                  piece = empty;
+                  health = 0;
+                  side = 0;
                 }
+                
                 break;
             }
-          }
+          
         }
 }
 void  CALCinertLoop(){
