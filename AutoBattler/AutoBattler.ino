@@ -238,39 +238,39 @@ void GameLoop() {
       }
     }
    
-    if(isDatagramReadyOnFace(f)) {
+     if(isDatagramReadyOnFace(f)) {
       const byte* data = getDatagramOnFace(f);
       switch(data[0]){
       //Handles coordinate from the neighbor
         case RESPONSECOORD:
-        byte dis = Distance(data[1], data[2], data[3]);
-        byte self = Distance(x, y, z);
-        if(self > dis && shortest > dis) {
-          shortest = dis;
-          bestMove = f;
-        }
+          byte dis = Distance(data[1], data[2], data[3]);
+          byte self = Distance(x, y, z);
+          if(self > dis && shortest > dis) {
+            shortest = dis;
+            bestMove = f;
+          }
           break;
      
         case MOVEINFO:
-        ResetTile(data[1],data[2],data[3]);
-      break;
+          ResetTile(data[1],data[2],data[3]);
+          break;
      
         case SEARCHENEMY:
-        if(player != NONE && player != data[1]) {
-          setColor(ORANGE);
-          setValueSentOnFace(SEARCHRES,f);
-        }
-      break;
+          if(player != NONE && player != data[1]) {
+            setColor(ORANGE);
+            setValueSentOnFace(SEARCHRES,f);
+          }
+          break;
      
         case ATTACK:
-        if(data[1] != RANGER) {
-          DealDamage(data[3]);
-        } else { //ranger's attack
-          DealDamage(data[3]);
-          byte panetration[4] = {ATTACK, TANK, data[2], data[3]};
-          sendDatagramOnFace(panetration, 4, data[2]);
-        }
-      break;
+          if(data[1] != RANGER) {
+            DealDamage(data[3]);
+          } else { //ranger's attack
+            DealDamage(data[3]);
+            byte panetration[4] = {ATTACK, TANK, data[2], data[3]};
+            sendDatagramOnFace(panetration, 4, data[2]);
+          }
+          break;
           
         case SEARCH:
           if (data [4] != 0 && knowledge == UNEXPLORED){
