@@ -489,11 +489,12 @@ void PawnAutoDecide() {
   }
 }
 
-//void SetDestiny(x, y, z) {
-//  des[0] = x;
-//  des[1] = y;
-//  des[2] = z;
-//}
+void setDestiny(byte a, byte b, byte c){
+  des[0] = a;
+  des[1] = b;
+  des[2] = c;
+}
+
 //request for the coord of all neighbors
 void NavRequest() {
   setValueSentOnAllFaces(REQUESTCOORD);
