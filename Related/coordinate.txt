@@ -1,0 +1,136 @@
+enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVERED, MOVEBLUE}
+
+//player party --------------
+enum PARTY {NONE, Red, Blue}
+byte player = NONE;
+
+enum STATE {SETUP, INPROGRESS, GAMESTART}
+byte state = SETUP;
+//position of this blink on the board
+byte x;
+byte y;
+byte z;
+
+Timer timer;
+//Main Code Body-----------------------------------------------------------------------------------
+void setup() {
+  setColor(WHITE);
+}
+
+void loop() {
+  //state control
+  switch(state) {
+    case SETUP:
+      SetUpPlayerParty();
+      //Once double clicked, we broadcast set-up-map to the board
+      if(buttonDoubleClicked())
+        SetUpMap();
+     
+      SetUpLoop();
+      break;
+    case INPROGRESS:
+      PrepareLoop();
+      break;
+    case GAMESTART:
+      
+      break;
+  }
+}
+
+//Map Coordinates SetUp-----------------------------------------------------------------------------------
+void SetUpLoop() {
+  FOREACH_FACE(f) {
+    if(isDatagramReadyOnFace(f)) {
+      const byte* data = getDatagramOnFace(f);
+     
+      switch(data[0]) {
+        case SETCOORD:
+          if(state != INPROGRESS) {
+      setColor(GREEN);
+            state = INPROGRESS;
+  timer.set(1000);
+            x = data[1];
+            y = data[2];
+            z = data[3];
+            SendCoord();
+          }
+          break;
+      }
+      markDatagramReadOnFace(f);
+    }
+  }
+}
+
+void SetUpPlayerParty() {
+  if(buttonSingleClicked()) {
+    player = (player+1) % 3;
+    SetPlayerColor();
+  }
+}
+//This is only called on the origin! Then messages will be broadcasted to the board. Waits 1s and switch to game state
+void SetUpMap() {
+  x = 10, y = 10, z = 10;
+  setColor(GREEN);
+  SendCoord();
+  state = INPROGRESS;
+  timer.set(1000);
+}
+void SendCoord() {
+  //face 0 right down
+  byte data[4] = {SETCOORD, x+1, y, z-1};
+  sendDatagramOnFace(data, 4, 0);
+  //face 1 left down
+  data[1] = x;
+  data[2] = y+1;
+  data[3] = z-1;
+  sendDatagramOnFace(data, 4, 1);
+  //face 2 left
+  data[1] = x-1;
+  data[2] = y+1;
+  data[3] = z;
+  sendDatagramOnFace(data, 4, 2);
+  //face 3 left up
+  data[1] = x-1;
+  data[2] = y;
+  data[3] = z+1;
+  sendDatagramOnFace(data, 4, 3);
+  //face 4 right up
+  data[1] = x;
+  data[2] = y-1;
+  data[3] = z+1;
+  sendDatagramOnFace(data, 4, 4);
+  //face 5 right
+  data[1] = x+1;
+  data[2] = y-1;
+  data[3] = z;
+  sendDatagramOnFace(data, 4, 5);
+}
+
+//Preparation Time Before Pawns Move(Allow some time for setting up coordinates)------------
+void PrepareLoop() {
+  if(timer.isExpired()) {
+    state = GAMESTART;
+    timer.set(1000);
+    SetPlayerColor();
+  }
+}
+
+byte DiffBetween(byte a, byte b) {
+  if(a > b) {
+    return a - b;
+  } else {
+    return b - a;
+  }
+}
+
+byte Distance(byte x, byte y, byte z) {
+  return (DiffBetween(x,des[0]) + DiffBetween(y,des[1]) + DiffBetween(z,des[2])) >> 1;
+}
+
+void SetPlayerColor() {
+    if(player == Red)
+      setColor(RED);
+ 
+    if(player == Blue)
+      setColor(BLUE);
+}
