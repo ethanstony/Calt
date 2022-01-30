@@ -13,11 +13,11 @@ byte signalState = INERT;
 enum Modes{PREP, CALC, PLAY, FINISH};
 byte mode = PREP;
 
-byte isOrigin = 0;
-byte side = 0;
+byte isOrigin = 0;//is origin(also there is a red origin but not map on grid
+byte side = 0;//1 = blue 2 = red 0 none
 
-enum pieces{empty, tank, fighter, ranger};
-byte piece = empty;
+enum pieces{empty, tank, fighter, ranger};//classes
+byte piece = empty;//player on current tile
 byte health = 0;
 
 bool setCalc = false;
