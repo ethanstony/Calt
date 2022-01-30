@@ -1,5 +1,8 @@
-enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO, ATTACK,
-SEARCH, RESPOND}
+enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO,
+             SEARCH, RESPOND, ATTACK}
+
+enum LOCATE {IDLE, PING, TRACK}
+byte radar = IDLE;
 
 //player party --------------
 enum PARTY {NONE, Red, Blue}
@@ -69,13 +72,14 @@ void SetUpLoop() {
 }
 
 void SetUpPlayerParty() {
-  if(buttonMultiClicked()) {
+//  if(buttonLongPressed()) {
+  if(buttonSingleClicked()) {
     player = (player+1) % 3;
   }
  
-  if(buttonSingleClicked()) {
-    piece = (piece+1) % 4;
-  }
+//  if(buttonSingleClicked()) {
+  //  piece = (piece+1) % 4;
+  //}
 }
 //This is only called on the origin! Then messages will be broadcasted to the board. Waits 1s and switch to game state
 void SetUpMap() {
@@ -117,6 +121,7 @@ void SendCoord() {
 
 //Preparation Time Before Pawns Move(Allow some time for setting up coordinates)------------
 void PrepareLoop() {
+  setColor(GREEN);
   if(timer.isExpired()) {
     state = GAMESTART;
     timer.set(1000);
@@ -144,30 +149,29 @@ void GameLoop() {
   if(buttonSingleClicked()) {
     SendSearchSignal();
     rface = 6;
-    timer.set(0);
   }
  
   FOREACH_FACE(f) {
-    if (!isValueReceivedOnFaceExpired(f)) {
-      if(didValueOnFaceChange(f)) {
-        switch(getLastValueReceivedOnFace(f)) {
-          case REQUESTCOORD:
-            if(player == NONE) //Only respond if this tile is empty
-              NavResponse(f);
-            break;
-          case REQUESTMOVE:
-            if(!occupied && player == NONE) {
-              SendMoveResponse(f);
-              occupied = true;
-            }
-            break;
-          case RESPONSEMOVE:
-            if(player != NONE)
-              SendMove(f);
-            break;
-        }
-      }
-    }
+//    if (!isValueReceivedOnFaceExpired(f)) {
+//      if(didValueOnFaceChange(f)) {
+//        switch(getLastValueReceivedOnFace(f)) {
+//          case REQUESTCOORD:
+//            if(player == NONE) //Only respond if this tile is empty
+//              NavResponse(f);
+//            break;
+//          case REQUESTMOVE:
+//            if(!occupied && player == NONE) {
+//              SendMoveResponse(f);
+//              occupied = true;
+//            }
+//            break;
+//          case RESPONSEMOVE:
+//            if(player != NONE)
+//              SendMove(f);
+//            break;
+//        }
+//      }
+//    }
    
     if(isDatagramReadyOnFace(f)) {
       const byte* data = getDatagramOnFace(f);
@@ -194,24 +198,21 @@ void GameLoop() {
           sendDatagramOnFace(panetration, 4, data[2]);
         }
       }
-      z
       if(data[0] == SEARCH && data [4] != 0){
-        if(player == NONE)
-          setColor(ORANGE);
+        radar = PING;
         transmitSearchSignal(data);
-        if(timer.isExpired){
-         timer.set(1000);
         rface = f;
-        }
-      }else if(data[0] == RESPOND && rface == 6){
-          setColor(GREEN);
+        setColorOnFace(GREEN, rface);
+          if(player != NONE){
+            sendRespondSignal();
+            }
       }else if(data[0] == RESPOND){
-        if(player == NONE)
-        setColor(CYAN);
-        transmitRespondSignal(data);
-      }
-      if(player != NONE){
-      	sendRespondSignal()
+        if(rface == 6){
+          setColor(GREEN);
+        }else{
+          radar = TRACK;
+          transmitRespondSignal(data);
+        }
       }
       markDatagramReadOnFace(f);
     }
@@ -219,7 +220,7 @@ void GameLoop() {
  
 }
 
-byte optimalMove(){
+byte optimalMove(){setup
 }
 
 byte r = 3;
@@ -228,7 +229,7 @@ void SendSearchSignal() {
   byte data[5] = {SEARCH, x, y, z, r};
  
   FOREACH_FACE(f) {
-    if (f !=rface)
+//    if (f !=rface)
     sendDatagramOnFace(data, 5, f);
   }
 }
@@ -237,7 +238,7 @@ void transmitSearchSignal(byte *package){
   package[4]--;
   
   FOREACH_FACE(f) {
-    if (f !=rface)
+//    if (f !=rface)
     sendDatagramOnFace(package, 5, f);
   }
 }
@@ -245,7 +246,7 @@ void transmitSearchSignal(byte *package){
 
 void sendRespondSignal() {
   byte data[5] = {RESPOND, x, y, z, player};
- 
+  
   sendDatagramOnFace(data, 5, rface);
 }
 
@@ -257,7 +258,7 @@ void transmitRespondSignal(byte *package) {
 void PawnAutoDecide() {
   if(player == NONE) return;
  
-  if(buttonSingleClicked()) //To be changed to check if enemy nearby
+  if(buttonDoubleClicked()) //To be changed to check if enemy nearby
     PawnAttack(x, y-1, z+1);
  
   if(pawnState == DECIDE) {
@@ -387,7 +388,17 @@ void SetPlayerColor() {
   }
  
   if(player == NONE)
-    setColor(GREEN);
+    switch(radar){
+      case IDLE:
+        setColor(WHITE);
+        break;
+      case PING:
+        setColor(ORANGE);
+        break;
+      case Track:
+        setColor(CYAN);
+        break;
+    }
 }
 
 byte GetAttackFace(dx, dy, dz) {
