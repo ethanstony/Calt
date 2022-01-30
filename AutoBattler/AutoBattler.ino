@@ -1,24 +1,15 @@
-<<<<<<< HEAD
-enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO,
-             SEARCH, RESPOND, ATTACK};
-
-enum LOCATE {IDLE, PING, TRACK, RECIEVED};
-byte radar = IDLE;
-=======
 #define GREY makeColorRGB(105,105,105)
  
-enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO, ATTACK, SEARCH, RESPOND, SEARCHENEMY, SEARCHRES}
->>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
+enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO, ATTACK, SEARCH, RESPOND, SEARCHENEMY, SEARCHRES};
+enum SEARCHSTATE {UNEXPLORED, EXPLORED, TRAIL, YOU};
+byte knowledge = UNEXPLORED;
+byte moreinfo = knowledge;
 
 //player party --------------
 enum PARTY {NONE, Red, Blue};
 byte player = NONE;
 
-<<<<<<< HEAD
-enum STATE {SETUP, INPROGRESS, GAMESTART ,GAMEEND}
-=======
-enum STATE {SETUP, INPROGRESS, GAMESTART};
->>>>>>> 0b4ef04a266007b8ae0d1c9eb7e28d0ca2aebcf5
+enum STATE {SETUP, INPROGRESS, GAMESTART ,GAMEEND};
 byte state = SETUP;
 
 enum pieces {TANK, FIGHTER, RANGER, HEALER};
@@ -115,26 +106,15 @@ void SetUpLoop() {
 }
 
 void SetUpPlayerParty() {
-<<<<<<< HEAD
-//  if(buttonLongPressed()) {
-  if(buttonSingleClicked()) {
-=======
   if(buttonLongPressed()) {
->>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
     player = (player+1) % 3;
     SetUpHP();
   }
  
-<<<<<<< HEAD
-//  if(buttonSingleClicked()) {
-  //  piece = (piece+1) % 4;
-  //}
-=======
   if(buttonSingleClicked() && player != NONE) {
     piece = (piece+1) % 4;
     SetUpHP();
   }
->>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
 }
 //This is only called on the origin! Then messages will be broadcasted to the board. Waits 1s and switch to game state
 void SetUpMap() {
@@ -194,8 +174,8 @@ void SetUpHP() {
 
 //Preparation Time Before Pawns Move(Allow some time for setting up coordinates)------------
 void PrepareLoop() {
-  setColor(GREEN);
   if(timer.isExpired()) {
+    setColor(GREEN);
     state = GAMESTART;
     timer.set(1000);
     gameTimer.set(15000);
@@ -203,13 +183,8 @@ void PrepareLoop() {
 }
 
 //Game Start. Pawns move----------------------------------------------------------
-<<<<<<< HEAD
-enum PawnState {DECIDE, MOVE, RESET};
-byte pawnState = DECIDE;
-=======
-enum PawnState {SEARCHING, DECIDE, MOVE, RESET}
+enum PawnState {SEARCHING, DECIDE, MOVE, RESET};
 byte pawnState = SEARCHING;
->>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
 //destination this pawn is moving towards
 byte des[] = {10, 10, 10};
 //bestMove indicates the next neighbor to move to;
@@ -230,20 +205,12 @@ void GameLoop() {
   if(timer.isExpired()) { //1s for each move
     PawnAutoDecide();
   }
-<<<<<<< HEAD
-  
+ 
   if(buttonSingleClicked()) {
     SendSearchSignal();
     rface = 6;
+    timer.set(0);
   }
-=======
- 
-  //if(buttonSingleClicked()) {
-    //SendSearchSignal();
-    //rface = 6;
-    //timer.set(0);
-  //}
->>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
  
   FOREACH_FACE(f) {
     if (!isValueReceivedOnFaceExpired(f)) {
@@ -282,134 +249,66 @@ void GameLoop() {
           shortest = dis;
           bestMove = f;
         }
-<<<<<<< HEAD
           break;
+     
         case MOVEINFO:
-        ResetTile(data[1],data[2]);
-       case ATTACK:
-=======
-      }
-     
-      if(data[0] == MOVEINFO) {
         ResetTile(data[1],data[2],data[3]);
-      }
+      break;
      
-      if(data[0] == SEARCHENEMY) {
+        case SEARCHENEMY:
         if(player != NONE && player != data[1]) {
           setColor(ORANGE);
           setValueSentOnFace(SEARCHRES,f);
         }
-      }
+      break;
      
-      if(data[0] == ATTACK) {
->>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
+        case ATTACK:
         if(data[1] != RANGER) {
-          DealDamage();
+          DealDamage(data[3]);
         } else { //ranger's attack
-<<<<<<< HEAD
-          DealDamage();
-         
-          byte panetration[4] = {ATTACK, TANK, data[2], data[3]};
-          sendDatagramOnFace(panetration, 4, data[2]);
-        }
-        break;
-        case SEARCH:
-        if(data [4] != 0){
-        transmitSearchSignal(data);
-=======
           DealDamage(data[3]);
           byte panetration[4] = {ATTACK, TANK, data[2], data[3]};
           sendDatagramOnFace(panetration, 4, data[2]);
         }
-      }
-      if(data[0] == SEARCH && data [4] != 0){
-        if(player == NONE)
-          setColor(ORANGE);
-        transmitSearchSignal(data);
-        if(timer.isExpired()){
-         timer.set(1000);
->>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
-        rface = f;
-        setColorOnFace(GREEN, rface);
-          if(player != NONE){
-            sendRespondSignal();
+      break;
+          
+        case SEARCH:
+          if (data [4] != 0 && knowledge == UNEXPLORED){
+            transmitSearchSignal(data);
+            rface = f;
+            knowledge = EXPLORED;
+            moreinfo = EXPLORED;
+            if(player != NONE){
+              sendRespondSignal();
+              }
             }
-        radar = PING;
-      }
-<<<<<<< HEAD
-      if(player != NONE){
-        sendRespondSignal()
-=======
-        break;
+          break;
+          
         case RESPOND:
-        if(rface == 6){
-          radar = RECIEVED;
-        }else{
-          radar = TRACK;
+          if(player == NONE)
+            moreinfo = TRAIL;
           transmitRespondSignal(data);
-        }
-        break;
->>>>>>> 0b4ef04a266007b8ae0d1c9eb7e28d0ca2aebcf5
+          if(rface == 6)
+            moreinfo = YOU;
+          break;
       }
-      
+          
       markDatagramReadOnFace(f);
     }
   }
  
 }
 
-<<<<<<< HEAD
-byte optimalMove(){
-}
-
-byte r = 3;
-
-void SendSearchSignal() {
-  byte data[5] = {SEARCH, x, y, z, r};
- 
-  FOREACH_FACE(f) {
-//    if (f !=rface)
-    sendDatagramOnFace(data, 5, f);
-  }
-}
-
-void transmitSearchSignal(byte *package){
-  package[4]--;
-  
-  FOREACH_FACE(f) {
-//    if (f !=rface)
-    sendDatagramOnFace(package, 5, f);
-  }
-}
-
-
-void sendRespondSignal() {
-  byte data[5] = {RESPOND, x, y, z, player};
-  
-  sendDatagramOnFace(data, 5, rface);
-}
-
-void transmitRespondSignal(byte *package) {
-  sendDatagramOnFace(package, 5, rface);
-}
-
-=======
->>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
 //Each pawn move is split into decision of which path to take and communicate with the neighbor to move.
 void PawnAutoDecide() {
   if(player == NONE) return;
  
-<<<<<<< HEAD
-  if(buttonDoubleClicked()) //To be changed to check if enemy nearby
-    PawnAttack(x, y-1, z+1);
-=======
   if(pawnState == SEARCHING) {
     timer.set(500);
     pawnState = DECIDE;
     SearchForEnemy();
     return;
   }
->>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
  
   if(x == des[0] && y == des[1] && z == des[2]) {
     pawnState = SEARCHING;
@@ -437,15 +336,8 @@ void SearchForEnemy() {
   }
 }
 //Pawn attacks position x,y,z
-<<<<<<< HEAD
-//NOTE: Damage can be modified here!
-void PawnAttack(byte dx, byte dy, byte dz) {
-  byte f = GetAttackFace(dx,dy,dz);
-  if(f == 6) return; //invalid attack
-=======
 //********************************************************NOTE: edit damage here!
 void PawnAttack(byte f) {
->>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
   byte data[4] = {ATTACK, piece, f, 0};
   switch(piece) {
     case TANK:
@@ -554,7 +446,6 @@ void SetPlayerColor() {
     SetPieceStyle();
   }
  
-<<<<<<< HEAD
   if(player == NONE){
     if(state == GAMEEND){
       setColor(WHITE);
@@ -564,23 +455,6 @@ void SetPlayerColor() {
     
   }
     
-=======
-  if(player == NONE)
-    switch(radar){
-      case IDLE:
-        setColor(WHITE);
-        break;
-      case PING:
-        setColor(ORANGE);
-        break;
-      case TRACK:
-        setColor(CYAN);
-        break;
-      case RECIEVED:
-        setColor(GREEN);
-        break;
-    }
->>>>>>> 0b4ef04a266007b8ae0d1c9eb7e28d0ca2aebcf5
 }
 //****************************************************************** Edit pawn style here
 void SetPieceStyle() {
@@ -610,10 +484,6 @@ void SetPieceStyle() {
 byte GetAttackFace(byte dx, byte dy, byte dz) {
 
 
-<<<<<<< HEAD
-byte GetAttackFace(byte dx, byte dy, byte dz) {
-=======
->>>>>>> 189c45682525e33bb263c54b081ef81bd67ca3b3
   if(dx > x && dz < z) {
     return 0;
   } else if(dy > y && dz < z) {
