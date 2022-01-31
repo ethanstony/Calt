@@ -13,7 +13,7 @@ An autochess game that is designed to be played on the Blink systems by Move38.
 
 [![Watch the video](Movies/hexachessvid.png)](https://youtu.be/1ajqONw9gwE)
 
-Test it out using the [blinks simulator](https://move38.github.io/Blinks-Simulator/) by copying and pasting in the code found [here](Autobattler/Autobattler.ino).
+Test it out using the [blinks simulator](https://move38.github.io/Blinks-Simulator/) by copying and pasting in the code found [here](AutoBattler/AutoBattler.ino).
 
 ### Features:
 
