@@ -1,9 +1,9 @@
 # Repository to hold team Calt's submission for the Move38 2022 game jam.
 
 ## Team Members:
--Alexander Qin
--Xiaotian Ma
--Ethan Tabachneck
+- Alexander Qin
+- Xiaotian Ma
+- Ethan Tabachneck
 
 ## Hexachess:
 
@@ -39,13 +39,13 @@ Whoever has the most pieces remaining at the end of the round is the winner.
 #### Classes:
 Each pawn can be one of four classes: the tank, the melee, the ranger, or the healer.
 
--The Tank: This pawn is meant to be able to take a lot of hits and has the most health of all the pawns.
+- The Tank: This pawn is meant to be able to take a lot of hits and has the most health of all the pawns.
 To identify a tank look for a pattern of four adjacent grey lights with the remaining two being the color of the team it is on.
--The Melee: This pawn is meant to deal a lot of damage and so it has the highest damage of all the pawns.
+- The Melee: This pawn is meant to deal a lot of damage and so it has the highest damage of all the pawns.
 To identify a melee look for a pattern of three adjacent yellow lights with the remaining three lights being the color of the team it is on.
--The Ranger: This pawn is meant to be able to deal damage from afar thus has a ranged attack.
+- The Ranger: This pawn is meant to be able to deal damage from afar thus has a ranged attack.
 To identify a ranger look for a pattern of two orange lights on opposite sides with the remaining four lights being the color of the team it is on.
--The Healer: This pawn is supposed to keep allied pawns alive and does so by healing them.
+- The Healer: This pawn is supposed to keep allied pawns alive and does so by healing them.
 It is important to note that this is also the only pawn that doesn't deal damage.
 To identify a healer look for a single green light with the remaining five lights being the color of the team it is on.
 
@@ -54,12 +54,12 @@ Due to the limited time of the game jam, currently our program only works on the
 The next thing to do would be to iron out the glitches that arise from using the hardware.
 
 #### Planned Features:
--Working on hardware
--Smarter pawns
--More time on larger maps
+- Working on hardware
+- Smarter pawns
+- More time on larger maps
 
 ## Further Resources:
 
--[Devoloper Resources](https://www.notion.so/5d7238314cbe478eb26c08b886dd6045?v=92ffb4fe0d124d39a5eb1a73a2aaf250)
--[General API](https://www.notion.so/Blinks-API-Reference-444f511953bd4619830937fa08bed6ce)
--[Hex Grid Reference](https://math.stackexchange.com/questions/2254655/hexagon-grid-coordinate-system)
+- [Devoloper Resources](https://www.notion.so/5d7238314cbe478eb26c08b886dd6045?v=92ffb4fe0d124d39a5eb1a73a2aaf250)
+- [General API](https://www.notion.so/Blinks-API-Reference-444f511953bd4619830937fa08bed6ce)
+- [Hex Grid Reference](https://math.stackexchange.com/questions/2254655/hexagon-grid-coordinate-system)
