@@ -1,9 +1,6 @@
 #define GREY makeColorRGB(105,105,105)
  
-enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO, ATTACK, SEARCH, RESPOND, SEARCHENEMY, SEARCHRES};
-enum SEARCHSTATE {UNEXPLORED, EXPLORED, TRAIL, YOU};
-byte knowledge = UNEXPLORED;
-byte moreinfo = knowledge;
+enum SIGNAL {EMPTY, SETCOORD, STARTGAME, REQUESTCOORD, RESPONSECOORD, REQUESTMOVE, RESPONSEMOVE, MOVEINFO, ATTACK, SEARCHENEMY, SEARCHRES};
 
 //player party --------------
 enum PARTY {NONE, Red, Blue};
@@ -196,8 +193,6 @@ byte bestMove = 6;
 byte shortest = 20;
 //once a neighboring pawn is allowed to move in,  this tile is locked
 bool occupied = false;
-//Marks if an enemy is found
-bool searching = true;
 
 void GameLoop() {
   if (gameTimer.isExpired()){
@@ -208,12 +203,6 @@ void GameLoop() {
   }
   if(timer.isExpired()) { //1s for each move
     PawnAutoDecide();
-  }
- 
-  if(buttonSingleClicked()) {
-    SendSearchSignal();
-    rface = 6;
-    timer.set(0);
   }
  
   FOREACH_FACE(f) {
@@ -274,26 +263,6 @@ void GameLoop() {
             byte panetration[4] = {ATTACK, TANK, data[2], data[3]};
             sendDatagramOnFace(panetration, 4, data[2]);
           }
-          break;
-          
-        case SEARCH:
-          if (data [4] != 0 && knowledge == UNEXPLORED){
-            transmitSearchSignal(data);
-            rface = f;
-            knowledge = EXPLORED;
-            moreinfo = EXPLORED;
-            if(player != NONE){
-              sendRespondSignal();
-              }
-            }
-          break;
-          
-        case RESPOND:
-          if(player == NONE)
-            moreinfo = TRAIL;
-          transmitRespondSignal(data);
-          if(rface == 6)
-            moreinfo = YOU;
           break;
       }
           
